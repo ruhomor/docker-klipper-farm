@@ -1,0 +1,79 @@
+---
+- name: Ensure Docker Python SDK is installed
+  ansible.builtin.pip:
+    name: docker
+    state: present
+
+- name: Ensure klipper config directory exists
+  file:
+    path: /etc/klipper
+    state: directory
+    owner: root  # Optional, specify the owner of the directory
+    group: root  # Optional, specify the group of the directory
+    mode: '0755'  # Optional, specify the permissions
+
+- name: Ensure klipper/config directory exists
+  file:
+    path: /etc/klipper/config
+    state: directory
+    owner: root  # Optional, specify the owner of the directory
+    group: root  # Optional, specify the group of the directory
+    mode: '0755'  # Optional, specify the permissions
+
+- name: Generate build.config for module (baud 230400)
+  template:
+    src: build.config.j2
+    dest: /etc/klipper/config/build.config
+    owner: root  # Optional, specify the owner of the directory
+    group: root  # Optional, specify the group of the directory
+    mode: '0755'  # Optional, specify the permissions
+
+- name: Generate docker-compose.extra.make.yaml from template
+  template:
+    src: docker-compose.extra.make.yaml.j2
+    dest: /etc/klipper/docker-compose.extra.make.yaml
+
+- name: Generate docker-compose.yaml from template
+  template:
+    src: docker-compose.yaml.j2
+    dest: /etc/klipper/docker-compose.yaml
+
+- name: Create config directories for each instance
+  file:
+    path: "/etc/klipper/config-{{ i }}"
+    state: directory
+  loop: "{{ range(1, number_of_instances + 1) }}"
+  loop_control:
+    loop_var: i
+
+- name: Generate moonraker.conf for each instance
+  template:
+    src: config/moonraker.conf.j2
+    dest: "/etc/klipper/config-{{ i }}/moonraker.conf"
+  loop: "{{ range(1, number_of_instances + 1) }}"
+  loop_control:
+    loop_var: i
+
+# - name: Generate printer.cfg for each instance
+#   template:
+#     src: config/printer.cfg.j2
+#     dest: "/etc/klipper/config-{{ i }}/printer.cfg"
+#   loop: "{{ range(1, number_of_instances + 1) }}"
+#   loop_control:
+#     loop_var: i
+
+- name: Generate fluidd.cfg for each instance
+  template:
+    src: config/fluidd.cfg.j2
+    dest: "/etc/klipper/config-{{ i }}/fluidd.cfg"
+  loop: "{{ range(1, number_of_instances + 1) }}"
+  loop_control:
+    loop_var: i
+
+# - name: Execute docker-compose up in detached mode using shell
+#   ansible.builtin.command:
+#     cmd: docker-compose --profile fluidd -f /etc/klipper/docker-compose.yaml up -d
+#     #### 1
+#     # cmd: docker-compose --profile fluidd -f /etc/klipper/docker-compose.yaml up -d
+#   args:
+#     chdir: /etc/klipper/

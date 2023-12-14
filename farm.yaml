@@ -1,0 +1,27 @@
+---
+- hosts: docker-klipper-farm-01
+  become: yes
+  vars:
+    docker_add_repo: true
+
+    docker_service_manage: true
+    docker_service_state: started
+    docker_service_enabled: true
+    docker_restart_handler_state: restarted
+
+    docker_install_compose_plugin: true
+    docker_compose_package: docker-compose-plugin
+    docker_compose_package_state: present
+
+    number_of_instances: 10  # Define how many klipper instances you want
+    pip_install_packages:
+      - name: docker
+
+  roles:
+
+    - role: ansible-role-docker
+      tags: ["docker"]
+
+    - role: ansible-role-pip
+
+    - role: ansible-role-klipper
